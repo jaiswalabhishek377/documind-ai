@@ -16,7 +16,7 @@
         </div>
         <div>
           <span class="font-bold text-base tracking-tight text-white">DocuMind AI</span>
-          <span class="block text-[10px] text-indigo-400 font-mono">Spring AI • pgvector</span>
+          <span class="block text-[10px] text-indigo-400 font-mono">Spring AI • </span>
         </div>
       </div>
     </div>
@@ -129,7 +129,7 @@
     <div class="p-3 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
       <span class="flex items-center space-x-1.5">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span>Supabase pgvector</span>
+        <span>Powered by Gemini</span>
       </span>
       <span class="font-mono text-[10px] text-slate-500">v1.0</span>
     </div>
@@ -241,9 +241,9 @@
                   @for (ref of msg.references; track $index) {
                     <button 
                       (click)="toggleRef(ref)"
-                      class="text-[11px] px-2.5 py-1 rounded-md bg-white border border-slate-300 hover:border-indigo-500 text-indigo-700 font-medium transition-all shadow-2xs flex items-center space-x-1">
-                      <span>Page {{ ref.pageNumber }}</span>
-                      <span class="text-[9px] text-slate-400">({{ (ref.score * 100).toFixed(0) }}% match)</span>
+                      class="text-[11px] px-2.5 py-1 rounded-md bg-white border border-slate-300 hover:border-indigo-500 text-indigo-700 font-medium transition-all shadow-2xs flex items-center space-x-1.5 cursor-pointer">
+                      <span>Page {{ ref.pageNumber }} <span class="text-slate-400 font-normal">· Excerpt {{ $index + 1 }}</span></span>
+                      <span class="text-[9.5px] font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">({{ (ref.score * 100).toFixed(0) }}%)</span>
                     </button>
                   }
                 </div>
