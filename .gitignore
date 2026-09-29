@@ -16,5 +16,10 @@
 .DS_Store
 Thumbs.db
 
-# Sensitive Environment files
+# Sensitive Environment and local config files
 *.env
+.env
+.env.*
+!.env.example
+application-local.yml
+*-local.yml
