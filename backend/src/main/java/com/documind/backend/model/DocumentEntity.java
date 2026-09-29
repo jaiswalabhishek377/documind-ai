@@ -47,6 +47,9 @@ public class DocumentEntity {
     @Column(columnDefinition = "TEXT")
     private String summary;
 
+    @Column(columnDefinition = "TEXT")
+    private String fullText;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;

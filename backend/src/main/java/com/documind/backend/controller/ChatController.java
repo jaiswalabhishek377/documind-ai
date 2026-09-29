@@ -30,8 +30,19 @@ public class ChatController {
      */
     @PostMapping
     public ResponseEntity<ChatResponse> askQuestion(@Valid @RequestBody ChatRequest request) {
-        ChatResponse response = ragService.askQuestion(request);
-        return ResponseEntity.ok(response);
+        try {
+            ChatResponse response = ragService.askQuestion(request);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error answering question for doc {}: {}", request.getDocumentId(), e.getMessage());
+            ChatResponse errorResponse = ChatResponse.builder()
+                    .documentId(request.getDocumentId())
+                    .question(request.getQuestion())
+                    .answer("Unable to generate an answer right now. The AI service is currently busy. Please try asking again in a few moments.")
+                    .references(java.util.Collections.emptyList())
+                    .build();
+            return ResponseEntity.ok(errorResponse);
+        }
     }
 
     /**

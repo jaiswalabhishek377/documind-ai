@@ -62,23 +62,38 @@ public class VectorStoreService {
      * Performs cosine similarity search in pgvector for the most relevant chunks.
      */
     public List<Document> searchSimilar(UUID documentId, String query, int topK) {
-        SearchRequest request = SearchRequest.query(query)
-                .withTopK(topK)
-                .withSimilarityThreshold(0.3)
-                .withFilterExpression("document_id == '" + documentId + "'");
-
+        long start = System.currentTimeMillis();
         try {
-            return vectorStore.similaritySearch(request);
+            log.info("🔎 Querying pgvector for documentId: '{}', query: '{}'", documentId, query);
+            var filter = new org.springframework.ai.vectorstore.filter.FilterExpressionBuilder()
+                    .eq("document_id", documentId.toString())
+                    .build();
+
+            SearchRequest request = SearchRequest.query(query)
+                    .withTopK(topK)
+                    .withSimilarityThreshold(0.2)
+                    .withFilterExpression(filter);
+
+            List<Document> results = vectorStore.similaritySearch(request);
+            log.info("🔎 pgvector returned {} matches in {} ms", results.size(), (System.currentTimeMillis() - start));
+            return results;
         } catch (Exception e) {
-            log.warn("Filtered similarity search failed, falling back to in-memory filter: {}", e.getMessage());
-            // Fallback: search topK * 4 and filter by document_id in memory if filter expression unsupported
-            List<Document> broadResults = vectorStore.similaritySearch(
-                    SearchRequest.query(query).withTopK(topK * 4)
-            );
-            return broadResults.stream()
-                    .filter(doc -> Objects.equals(doc.getMetadata().get("document_id"), documentId.toString()))
-                    .limit(topK)
-                    .toList();
+            log.warn("Filter expression search failed ({} ms): {}, using fallback similarity search",
+                    (System.currentTimeMillis() - start), e.getMessage());
+            try {
+                List<Document> broadResults = vectorStore.similaritySearch(
+                        SearchRequest.query(query).withTopK(Math.max(topK * 4, 10))
+                );
+                List<Document> filtered = broadResults.stream()
+                        .filter(doc -> Objects.equals(doc.getMetadata().get("document_id"), documentId.toString()))
+                        .limit(topK)
+                        .toList();
+                log.info("🔎 Fallback similarity search returned {} matches in {} ms", filtered.size(), (System.currentTimeMillis() - start));
+                return filtered;
+            } catch (Exception ex) {
+                log.error("Fallback similarity search also failed in {} ms: {}", (System.currentTimeMillis() - start), ex.getMessage());
+                return Collections.emptyList();
+            }
         }
     }
 

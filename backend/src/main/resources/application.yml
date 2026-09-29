@@ -4,11 +4,13 @@ server:
 spring:
   application:
     name: documind-backend
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
 
   datasource:
-    url: jdbc:postgresql://aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres
-    username: postgres.cqaookausoiljkdcoycr
-    password: CodeSyncDbUser2026
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres.cqaookausoiljkdcoycr}
+    password: ${SPRING_DATASOURCE_PASSWORD:your-supabase-db-password}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -36,14 +38,15 @@ spring:
       # Defaults to Google Gemini's OpenAI-compatible endpoint.
       # Can be switched to Groq (https://api.groq.com/openai/v1) or OpenAI by changing env vars.
       base-url: ${LLM_BASE_URL:https://generativelanguage.googleapis.com/v1beta/openai/}
-      api-key: ${GEMINI_API_KEY:${LLM_API_KEY:placeholder}}
+      api-key: ${GEMINI_API_KEY:your-gemini-api-key}
       chat:
         options:
-          model: ${LLM_CHAT_MODEL:gemini-1.5-flash}
+          model: ${LLM_CHAT_MODEL:gemini-3.1-flash-lite}
           temperature: 0.2
       embedding:
         options:
-          model: ${LLM_EMBED_MODEL:text-embedding-004}
+          model: ${LLM_EMBED_MODEL:gemini-embedding-001}
+          dimensions: 768
     vectorstore:
       pgvector:
         index-type: HNSW

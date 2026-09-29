@@ -64,6 +64,7 @@ public class DocumentController {
             // 2. Parse text and page structure using PDFBox / Apache POI
             ParsedDocument parsedDoc = parserService.parse(file);
             entity.setPageCount(parsedDoc.getTotalPages());
+            entity.setFullText(parsedDoc.getFullText());
             textCache.put(entity.getId(), parsedDoc.getFullText());
 
             // 3. Chunk and index into Supabase pgvector
@@ -113,7 +114,12 @@ public class DocumentController {
      */
     @PostMapping("/{id}/summarize")
     public ResponseEntity<SummaryResponse> summarizeDocument(@PathVariable UUID id) {
-        String fullText = textCache.getOrDefault(id, "");
+        String fullText = textCache.get(id);
+        if (fullText == null || fullText.isBlank()) {
+            fullText = documentRepository.findById(id)
+                    .map(DocumentEntity::getFullText)
+                    .orElse("");
+        }
         SummaryResponse summary = summarizationService.generateSummary(id, fullText);
         return ResponseEntity.ok(summary);
     }

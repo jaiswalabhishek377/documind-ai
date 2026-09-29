@@ -9,6 +9,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -64,20 +65,44 @@ public class SummarizationService {
                 * (Notable dates, obligations, parties, or metrics mentioned)
                 """, sampleText);
 
-        String summary;
-        try {
-            ChatClient chatClient = ChatClient.builder(chatModel).build();
-            summary = chatClient.prompt()
-                    .user(prompt)
-                    .call()
-                    .content();
+        String summary = null;
+        List<String> candidateModels = List.of(
+                "gemini-3.1-flash-lite",
+                "gemini-flash-lite-latest",
+                "gemini-3.5-flash-lite",
+                "gemini-3.7-flash",
+                "gemma-4-26b-a4b-it",
+                "gemini-flash-latest",
+                "gemini-3.8-flash"
+        );
 
-            // Persist the summary in the database
-            entity.setSummary(summary);
-            documentRepository.save(entity);
-        } catch (Exception e) {
-            log.error("Failed to generate document summary: {}", e.getMessage(), e);
-            summary = "Error generating summary: " + e.getMessage() + ". Please check your API key.";
+        for (String modelName : candidateModels) {
+            long startTime = System.currentTimeMillis();
+            try {
+                log.info("🤖 [Summary] Calling model '{}' for document {}...", modelName, documentId);
+                ChatClient chatClient = ChatClient.builder(chatModel).build();
+                String response = chatClient.prompt()
+                        .user(prompt)
+                        .options(org.springframework.ai.openai.OpenAiChatOptions.builder().withModel(modelName).build())
+                        .call()
+                        .content();
+
+                if (response != null && !response.isBlank()) {
+                    long duration = System.currentTimeMillis() - startTime;
+                    summary = response.replaceAll("(?s)<thought>.*?</thought>", "").trim();
+                    log.info("✅ [Summary Success] Model '{}' completed in {} ms!", modelName, duration);
+                    entity.setSummary(summary);
+                    documentRepository.save(entity);
+                    break;
+                }
+            } catch (Exception e) {
+                long duration = System.currentTimeMillis() - startTime;
+                log.warn("⚠️ [Summary] Model '{}' failed in {} ms ({}). Trying next candidate...", modelName, duration, e.getMessage());
+            }
+        }
+
+        if (summary == null || summary.isBlank()) {
+            summary = "Summary generation temporarily throttled. Please try again in a few moments.";
         }
 
         return SummaryResponse.builder()
